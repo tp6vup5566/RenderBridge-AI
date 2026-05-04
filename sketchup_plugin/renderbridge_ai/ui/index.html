@@ -53,7 +53,7 @@
       .preview img {
         display: none;
         width: 100%;
-        height: 100%;
+        max-height: 320px;
         object-fit: contain;
       }
 
@@ -175,6 +175,22 @@
           statusElement.textContent = message;
           statusElement.classList.remove("error");
           renderButton.disabled = true;
+        },
+
+        setRenderResult(result) {
+          const previewImage = document.querySelector("#preview-image");
+          const placeholder = document.querySelector("#preview-placeholder");
+          const imageBase64 = result.result_image_base64;
+
+          if (!imageBase64) {
+            this.setStatus("Render completed, but no image was returned.", "error");
+            return;
+          }
+
+          previewImage.src = `data:image/png;base64,${imageBase64}`;
+          previewImage.style.display = "block";
+          placeholder.style.display = "none";
+          this.setStatus(result.message || "Render completed.");
         },
       };
 
