@@ -30,7 +30,41 @@ module RenderBridgeAI
       )
 
       html_dialog.set_file(UI_PATH)
+      register_callbacks(html_dialog)
       html_dialog
+    end
+
+    def register_callbacks(html_dialog)
+      html_dialog.add_action_callback('dialog_ready') do |action_context|
+        action_context.execute_script(
+          "window.RenderBridge.setStatus('Ready. Enter a prompt and click Render.');"
+        )
+      end
+
+      html_dialog.add_action_callback('render_requested') do |action_context, prompt|
+        cleaned_prompt = prompt.to_s.strip
+
+        if cleaned_prompt.empty?
+          action_context.execute_script(
+            "window.RenderBridge.setStatus('Please enter a prompt before rendering.', 'error');"
+          )
+          next
+        end
+
+        action_context.execute_script(
+          "window.RenderBridge.setStatus(#{js_string("Ruby received prompt: #{cleaned_prompt}")});"
+        )
+      end
+
+      html_dialog.add_action_callback('open_backend_health') do |action_context|
+        action_context.execute_script(
+          "window.RenderBridge.setStatus('Backend health check will be connected in Step 4.');"
+        )
+      end
+    end
+
+    def js_string(value)
+      value.to_s.dump
     end
 
     def register_menu

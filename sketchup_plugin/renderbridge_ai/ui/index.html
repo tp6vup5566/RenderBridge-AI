@@ -19,13 +19,18 @@
 
       main {
         display: grid;
-        gap: 16px;
+        gap: 18px;
       }
 
       h1 {
         margin: 0;
         font-size: 22px;
         font-weight: 650;
+      }
+
+      header {
+        display: grid;
+        gap: 6px;
       }
 
       p {
@@ -42,14 +47,158 @@
         border-radius: 8px;
         background: #ffffff;
         color: #687384;
+        overflow: hidden;
+      }
+
+      .preview img {
+        display: none;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .controls {
+        display: grid;
+        gap: 10px;
+      }
+
+      label {
+        font-size: 13px;
+        font-weight: 650;
+        color: #394150;
+      }
+
+      textarea {
+        min-height: 96px;
+        resize: vertical;
+        border: 1px solid #c6ccd5;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font: inherit;
+        line-height: 1.45;
+      }
+
+      textarea:focus {
+        border-color: #2563eb;
+        outline: 3px solid rgba(37, 99, 235, 0.16);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      button {
+        min-height: 40px;
+        border: 0;
+        border-radius: 8px;
+        padding: 0 14px;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      button.primary {
+        flex: 1;
+        background: #1f6feb;
+        color: #ffffff;
+      }
+
+      button.secondary {
+        background: #e8ecf2;
+        color: #20242a;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.62;
+      }
+
+      .status {
+        min-height: 22px;
+        border-radius: 8px;
+        background: #eef4ff;
+        color: #264f96;
+        padding: 10px 12px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .status.error {
+        background: #fff1f2;
+        color: #be123c;
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>RenderBridge AI</h1>
-      <p>SketchUp plugin shell is ready. The render controls will be connected in the next step.</p>
-      <section class="preview" aria-label="Render preview">Preview area</section>
+      <header>
+        <h1>RenderBridge AI</h1>
+        <p>Capture the current SketchUp viewport and send a prompt to the rendering bridge.</p>
+      </header>
+
+      <section class="preview" aria-label="Render preview">
+        <span id="preview-placeholder">Rendered image preview</span>
+        <img id="preview-image" alt="Rendered SketchUp viewport" />
+      </section>
+
+      <section class="controls" aria-label="Render controls">
+        <label for="prompt">Prompt</label>
+        <textarea
+          id="prompt"
+          placeholder="Example: warm Scandinavian interior, soft daylight, realistic materials"
+        ></textarea>
+
+        <div class="actions">
+          <button id="render-button" class="primary" type="button">Render</button>
+          <button id="health-button" class="secondary" type="button">Health</button>
+        </div>
+      </section>
+
+      <div id="status" class="status" role="status">Initializing...</div>
     </main>
+
+    <script>
+      const statusElement = document.querySelector("#status");
+      const promptElement = document.querySelector("#prompt");
+      const renderButton = document.querySelector("#render-button");
+      const healthButton = document.querySelector("#health-button");
+
+      window.RenderBridge = {
+        setStatus(message, type = "info") {
+          statusElement.textContent = message;
+          statusElement.classList.toggle("error", type === "error");
+          renderButton.disabled = false;
+        },
+
+        setLoading(message) {
+          statusElement.textContent = message;
+          statusElement.classList.remove("error");
+          renderButton.disabled = true;
+        },
+      };
+
+      renderButton.addEventListener("click", () => {
+        const prompt = promptElement.value.trim();
+
+        if (!prompt) {
+          window.RenderBridge.setStatus("Please enter a prompt before rendering.", "error");
+          promptElement.focus();
+          return;
+        }
+
+        window.RenderBridge.setLoading("Sending render request to Ruby...");
+        window.sketchup.render_requested(prompt);
+      });
+
+      healthButton.addEventListener("click", () => {
+        window.RenderBridge.setLoading("Preparing backend health check...");
+        window.sketchup.open_backend_health();
+      });
+
+      window.addEventListener("DOMContentLoaded", () => {
+        window.sketchup.dialog_ready();
+      });
+    </script>
   </body>
 </html>
